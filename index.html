@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+html,body{margin:0}
+:root{color-scheme:light dark; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%} [hidden]{display:none!important}
+</style>
+<title>격자점 탐구판</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --paper:#F7F9F8;
+  --board:#FFFFFF;
+  --ink:#16211F;
+  --ink-2:#4A5D5A;
+  --ink-3:#8194901a;
+  --line:#DCE5E3;
+  --line-strong:#B9C8C5;
+  --rule:#C9D6D3;
+  --rule-major:#9FB3AF;
+  --teal:#0E7C7B;
+  --teal-soft:#0e7c7b1f;
+  --amber:#C25E17;
+  --amber-soft:#c25e171f;
+  --plum:#7A3E8F;
+  --plum-soft:#7a3e8f1f;
+  --ok:#15754A;
+  --warn:#B3401C;
+  --shadow:0 1px 2px rgba(22,33,31,.06), 0 8px 24px -16px rgba(22,33,31,.25);
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#101615;
+    --board:#171F1E;
+    --ink:#E7EFED;
+    --ink-2:#9BAFAB;
+    --line:#26312F;
+    --line-strong:#384744;
+    --rule:#2E3B39;
+    --rule-major:#4C605C;
+    --teal:#4FBFB5;
+    --teal-soft:#4fbfb524;
+    --amber:#E89354;
+    --amber-soft:#e8935424;
+    --plum:#BA8AD0;
+    --plum-soft:#ba8ad024;
+    --ok:#5FC28E;
+    --warn:#E8845F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101615; --board:#171F1E; --ink:#E7EFED; --ink-2:#9BAFAB;
+  --line:#26312F; --line-strong:#384744; --rule:#2E3B39; --rule-major:#4C605C;
+  --teal:#4FBFB5; --teal-soft:#4fbfb524; --amber:#E89354; --amber-soft:#e8935424;
+  --plum:#BA8AD0; --plum-soft:#ba8ad024; --ok:#5FC28E; --warn:#E8845F;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Sans KR","Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+  font-size:15px; line-height:1.6;
+}
+.wrap{max-width:1120px; margin:0 auto; padding-block:20px 48px; padding-left:16px; padding-right:16px;}
+
+/* ── 머리 ── */
+header{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; margin-bottom:14px;}
+h1{
+  font-size:clamp(21px,3.4vw,27px); font-weight:700; letter-spacing:-.02em;
+  margin:0; text-wrap:balance;
+}
+h1 em{font-style:normal; color:var(--teal)}
+.sub{color:var(--ink-2); font-size:13.5px; margin:0}
+
+/* ── 툴바 ── */
+.bar{
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  padding:9px 10px; background:var(--board); border:1px solid var(--line);
+  border-radius:var(--r); box-shadow:var(--shadow); margin-bottom:14px;
+}
+.bar .sep{width:1px; align-self:stretch; background:var(--line); margin:0 2px}
+button, select{
+  font:inherit; font-size:13.5px; color:var(--ink); background:var(--board);
+  border:1px solid var(--line-strong); border-radius:7px; padding:6px 11px; cursor:pointer;
+}
+button:hover:not(:disabled){border-color:var(--teal); color:var(--teal)}
+button:disabled{opacity:.42; cursor:default}
+button.primary{background:var(--teal); border-color:var(--teal); color:#fff}
+button.primary:hover{opacity:.9; color:#fff}
+:focus-visible{outline:2px solid var(--teal); outline-offset:2px}
+.tog{display:inline-flex; align-items:center; gap:6px; font-size:13.5px; color:var(--ink-2); cursor:pointer; user-select:none}
+.tog input{accent-color:var(--teal); width:15px; height:15px; margin:0}
+label.sel{display:inline-flex; align-items:center; gap:6px; font-size:13.5px; color:var(--ink-2)}
+
+/* ── 본체 ── */
+.main{display:grid; grid-template-columns:minmax(0,1fr) 288px; gap:16px; align-items:start}
+@media (max-width:860px){ .main{grid-template-columns:minmax(0,1fr)} }
+
+.board{
+  background:var(--board); border:1px solid var(--line); border-radius:var(--r);
+  box-shadow:var(--shadow); padding:10px;
+}
+.board svg{display:block; width:100%; height:auto; max-width:620px; margin:0 auto; touch-action:manipulation}
+
+.status{
+  display:flex; align-items:center; gap:8px; min-height:34px;
+  margin-top:8px; padding:6px 10px; border-radius:7px;
+  background:var(--teal-soft); color:var(--ink-2); font-size:13px;
+}
+.status.warn{background:#b3401c1f; color:var(--warn); font-weight:500}
+
+/* ── 계기판 ── */
+.panel{display:flex; flex-direction:column; gap:12px}
+.card{
+  background:var(--board); border:1px solid var(--line); border-radius:var(--r);
+  box-shadow:var(--shadow); padding:13px 14px;
+}
+.card h2{
+  font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-2); margin:0 0 9px;
+}
+.readout{display:flex; flex-direction:column; gap:1px}
+.row{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:7px 0; border-bottom:1px dashed var(--line);
+}
+.row:last-child{border-bottom:0}
+.row .name{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--ink-2)}
+.dot{width:11px; height:11px; border-radius:50%; flex:none}
+.dot.i{background:var(--teal)}
+.dot.b{background:var(--amber)}
+.dot.h{background:var(--plum)}
+.sym{font-family:"IBM Plex Mono",ui-monospace,monospace; font-style:italic; font-weight:600}
+.val{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:21px; font-weight:600;
+  font-variant-numeric:tabular-nums; letter-spacing:-.01em;
+}
+.val.i{color:var(--teal)} .val.b{color:var(--amber)} .val.h{color:var(--plum)}
+.val.masked{color:var(--ink-2); opacity:.55}
+
+/* 넓이 블록 */
+.area{
+  margin-top:11px; padding:11px 12px; border-radius:8px;
+  border:1.5px dashed var(--line-strong); background:transparent;
+}
+.area.open{border-style:solid; border-color:var(--teal); background:var(--teal-soft)}
+.area .lab{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-2)}
+.area .big{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:30px; font-weight:600;
+  font-variant-numeric:tabular-nums; line-height:1.15; margin-top:2px;
+}
+.guess{display:flex; gap:6px; margin-top:9px}
+.guess input{
+  font:inherit; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:14px;
+  width:100%; min-width:0; padding:6px 9px; border-radius:7px;
+  border:1px solid var(--line-strong); background:var(--board); color:var(--ink);
+}
+.guess button{flex:none}
+.verdict{margin-top:8px; font-size:13px; font-weight:500}
+.verdict.good{color:var(--ok)} .verdict.bad{color:var(--warn)}
+
+.check{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:13.5px;
+  color:var(--ink-2); line-height:1.8; word-break:keep-all;
+}
+.check b{color:var(--ink)}
+
+.goal{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.goal label{font-size:12px; color:var(--ink-2); display:flex; flex-direction:column; gap:3px}
+.goal label > span{white-space:nowrap}
+.goal input{
+  font:inherit; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:14px;
+  width:100%; min-width:0; padding:5px 8px; border-radius:6px;
+  border:1px solid var(--line-strong); background:var(--board); color:var(--ink);
+}
+.badge{
+  display:inline-block; margin-top:9px; padding:3px 10px; border-radius:999px;
+  font-size:12.5px; font-weight:600;
+}
+.badge.on{background:var(--ok); color:#fff}
+.badge.off{background:var(--line); color:var(--ink-2)}
+
+/* ── 기록 ── */
+.records{margin-top:16px}
+.records .head{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:9px}
+.records h2{font-size:14px; font-weight:600; margin:0; flex:1}
+.tablewrap{overflow-x:auto; background:var(--board); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; min-width:520px; font-variant-numeric:tabular-nums}
+th,td{padding:8px 12px; text-align:right; border-bottom:1px solid var(--line); font-size:13.5px}
+th{
+  font-size:11.5px; letter-spacing:.03em; color:var(--ink-2);
+  font-weight:600; background:var(--paper); white-space:nowrap;
+}
+th .sym{font-size:12.5px}
+th:first-child, td:first-child{text-align:left}
+td{font-family:"IBM Plex Mono",ui-monospace,monospace}
+td:first-child{font-family:"IBM Plex Sans KR",sans-serif}
+tbody tr:last-child td{border-bottom:0}
+td.i{color:var(--teal)} td.b{color:var(--amber)} td.h{color:var(--plum)}
+.empty{padding:16px; color:var(--ink-2); font-size:13.5px; text-align:center}
+.del{
+  border:0; background:transparent; color:var(--ink-2); padding:2px 6px;
+  font-size:15px; line-height:1; border-radius:5px;
+}
+.del:hover{color:var(--warn); border:0}
+
+footer{margin-top:22px; color:var(--ink-2); font-size:12.5px; line-height:1.7}
+footer code{font-family:"IBM Plex Mono",monospace; font-style:italic}
+
+@media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important} }
+</style>
+
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>격자점 탐구판 <em>—</em> 넓이와 점의 개수</h1>
+    <p class="sub">격자점을 순서대로 눌러 다각형을 만들어 보세요.</p>
+  </header>
+
+  <div class="bar">
+    <button id="btnHole">구멍 추가</button>
+    <button id="btnUndo">한 점 취소</button>
+    <button id="btnClear">전체 지우기</button>
+    <span class="sep"></span>
+    <label class="sel">격자
+      <select id="selSize">
+        <option value="10">11 × 11</option>
+        <option value="14" selected>15 × 15</option>
+        <option value="20">21 × 21</option>
+      </select>
+    </label>
+    <span class="sep"></span>
+    <label class="tog"><input type="checkbox" id="togI" checked> 내부 점 <span class="sym">i</span></label>
+    <label class="tog"><input type="checkbox" id="togB" checked> 둘레 점 <span class="sym">b</span></label>
+    <label class="tog"><input type="checkbox" id="togCheck"> 검산식(교사용)</label>
+  </div>
+
+  <div class="main">
+    <div>
+      <div class="board"><svg id="svg" role="img" aria-label="격자 다각형 작도판"></svg></div>
+      <div class="status" id="status">격자점을 3개 이상 누른 뒤, 처음 점을 다시 누르면 도형이 닫힙니다.</div>
+    </div>
+
+    <div class="panel">
+      <section class="card">
+        <h2>측정값</h2>
+        <div class="readout">
+          <div class="row">
+            <span class="name"><i class="dot i"></i>내부 격자점 <span class="sym">i</span></span>
+            <span class="val i" id="outI">–</span>
+          </div>
+          <div class="row">
+            <span class="name"><i class="dot b"></i>둘레 격자점 <span class="sym">b</span></span>
+            <span class="val b" id="outB">–</span>
+          </div>
+          <div class="row">
+            <span class="name"><i class="dot h"></i>구멍 <span class="sym">h</span></span>
+            <span class="val h" id="outH">0</span>
+          </div>
+        </div>
+
+        <div class="area" id="areaBox">
+          <div class="lab">넓이 <span class="sym">S</span></div>
+          <div class="big" id="outS">?</div>
+          <div class="guess">
+            <input id="guess" type="number" step="0.5" inputmode="decimal" placeholder="넓이를 예상해 보세요">
+            <button id="btnGuess" class="primary">확인</button>
+          </div>
+          <div class="verdict" id="verdict"></div>
+        </div>
+      </section>
+
+      <section class="card" id="checkCard" hidden>
+        <h2>픽의 정리 검산</h2>
+        <div class="check" id="checkBody">도형을 완성하면 표시됩니다.</div>
+      </section>
+
+      <section class="card">
+        <h2>도전 과제</h2>
+        <div class="goal">
+          <label><span>목표 <b class="sym">i</b></span><input id="goalI" type="number" min="0" placeholder="예: 5"></label>
+          <label><span>목표 <b class="sym">S</b></span><input id="goalS" type="number" step="0.5" placeholder="예: 7"></label>
+        </div>
+        <span class="badge off" id="goalBadge">목표를 입력하세요</span>
+      </section>
+
+      <button id="btnRecord" class="primary" disabled>이 도형 기록하기</button>
+    </div>
+  </div>
+
+  <div class="records">
+    <div class="head">
+      <h2>기록한 도형</h2>
+      <button id="btnCopy">표 복사</button>
+      <button id="btnWipe">기록 지우기</button>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>번호</th><th>넓이 <span class="sym">S</span></th><th>내부 <span class="sym">i</span></th><th>둘레 <span class="sym">b</span></th><th>구멍 <span class="sym">h</span></th><th><span class="sym">i</span> + <span class="sym">b</span>/2 − 1 + <span class="sym">h</span></th><th></th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    내부 점 <code>i</code>는 도형 안쪽의 격자점, 둘레 점 <code>b</code>는 꼭짓점을 포함해 변 위에 있는 격자점입니다.
+    구멍의 둘레에 있는 점도 <code>b</code>에 들어가고, 구멍 안쪽의 점은 <code>i</code>에 넣지 않습니다.
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var NS = "http://www.w3.org/2000/svg";
+var svg = document.getElementById("svg");
+
+var S = {
+  N: 14,
+  outer: [],
+  closed: false,
+  holes: [],
+  hole: null,        // 그리는 중인 구멍
+  revealed: false,
+  showI: true,
+  showB: true,
+  records: [],
+  seq: 0
+};
+
+/* ───────── 계산 ───────── */
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ var t=a%b; a=b; b=t; } return a; }
+
+function shoelace(p){
+  var s=0;
+  for(var k=0;k<p.length;k++){
+    var a=p[k], b=p[(k+1)%p.length];
+    s += a[0]*b[1] - b[0]*a[1];
+  }
+  return Math.abs(s)/2;
+}
+
+function onSeg(p,a,b){
+  var cr = (b[0]-a[0])*(p[1]-a[1]) - (b[1]-a[1])*(p[0]-a[0]);
+  if(cr !== 0) return false;
+  return p[0]>=Math.min(a[0],b[0]) && p[0]<=Math.max(a[0],b[0]) &&
+         p[1]>=Math.min(a[1],b[1]) && p[1]<=Math.max(a[1],b[1]);
+}
+function onPoly(p,poly){
+  for(var k=0;k<poly.length;k++){
+    if(onSeg(p, poly[k], poly[(k+1)%poly.length])) return true;
+  }
+  return false;
+}
+function inPoly(p,poly){
+  var c=false;
+  for(var k=0, j=poly.length-1; k<poly.length; j=k++){
+    var xi=poly[k][0], yi=poly[k][1], xj=poly[j][0], yj=poly[j][1];
+    if((yi>p[1]) !== (yj>p[1])){
+      var x = (xj-xi)*(p[1]-yi)/(yj-yi) + xi;
+      if(p[0] < x) c = !c;
+    }
+  }
+  return c;
+}
+
+function orient(a,b,c){
+  var v = (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0]);
+  return v>0 ? 1 : (v<0 ? -1 : 0);
+}
+function segCross(a,b,c,d){           // 끝점을 공유하지 않는 진짜 교차만
+  if(same(a,c)||same(a,d)||same(b,c)||same(b,d)) return false;
+  var o1=orient(a,b,c), o2=orient(a,b,d), o3=orient(c,d,a), o4=orient(c,d,b);
+  if(o1!==o2 && o3!==o4) return true;
+  if(o1===0 && onSeg(c,a,b)) return true;
+  if(o2===0 && onSeg(d,a,b)) return true;
+  if(o3===0 && onSeg(a,c,d)) return true;
+  if(o4===0 && onSeg(b,c,d)) return true;
+  return false;
+}
+function same(a,b){ return a[0]===b[0] && a[1]===b[1]; }
+
+function selfCrosses(poly){
+  var n=poly.length;
+  if(n<4) return false;
+  for(var k=0;k<n;k++){
+    for(var m=k+1;m<n;m++){
+      if(segCross(poly[k],poly[(k+1)%n], poly[m],poly[(m+1)%n])) return true;
+    }
+  }
+  return false;
+}
+
+function measure(){
+  if(!S.closed || S.outer.length<3) return null;
+  var area = shoelace(S.outer);
+  for(var k=0;k<S.holes.length;k++) area -= shoelace(S.holes[k]);
+
+  var i=0, b=0, cls={};
+  for(var x=0;x<=S.N;x++){
+    for(var y=0;y<=S.N;y++){
+      var p=[x,y], tag="out";
+      var onB = onPoly(p,S.outer);
+      var onH = false;
+      for(var m=0;m<S.holes.length && !onH;m++) if(onPoly(p,S.holes[m])) onH=true;
+
+      if(onB || onH){ tag="b"; b++; }
+      else if(inPoly(p,S.outer)){
+        var inH=false;
+        for(var q=0;q<S.holes.length && !inH;q++) if(inPoly(p,S.holes[q])) inH=true;
+        if(inH){ tag="hole"; } else { tag="i"; i++; }
+      }
+      cls[x+","+y]=tag;
+    }
+  }
+  return { area:area, i:i, b:b, h:S.holes.length, cls:cls };
+}
+
+function fmt(v){
+  if(v===null||v===undefined) return "–";
+  return (Math.round(v*100)/100).toString();
+}
+
+/* ───────── 그리기 ───────── */
+function el(tag,attrs){
+  var e=document.createElementNS(NS,tag);
+  for(var k in attrs) e.setAttribute(k,attrs[k]);
+  return e;
+}
+function toSvgXY(x,y){ return [x+1, (S.N+1)-y]; }   // y 위로
+
+function render(){
+  var M = measure();
+  var N = S.N, side = N+2;
+  svg.setAttribute("viewBox","0 0 "+side+" "+side);
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+
+  var r = N<=10 ? 0.115 : (N<=14 ? 0.095 : 0.075);
+  var lw = side/900;
+
+  // 모눈 (5칸마다 진하게)
+  var g = el("g",{});
+  for(var k=0;k<=N;k++){
+    var major = (k%5===0);
+    var a=toSvgXY(k,0), b=toSvgXY(k,N);
+    g.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
+      stroke:major?"var(--rule-major)":"var(--rule)","stroke-width":(major?lw*1.6:lw)}));
+    var c=toSvgXY(0,k), d=toSvgXY(N,k);
+    g.appendChild(el("line",{x1:c[0],y1:c[1],x2:d[0],y2:d[1],
+      stroke:major?"var(--rule-major)":"var(--rule)","stroke-width":(major?lw*1.6:lw)}));
+  }
+  svg.appendChild(g);
+
+  // 다각형 면
+  if(S.closed && S.outer.length>=3){
+    var d2 = ringPath(S.outer);
+    for(var m=0;m<S.holes.length;m++) d2 += " " + ringPath(S.holes[m]);
+    svg.appendChild(el("path",{d:d2, "fill-rule":"evenodd",
+      fill:"var(--teal)", "fill-opacity":"0.11",
+      stroke:"var(--teal)", "stroke-width":side/230, "stroke-linejoin":"round"}));
+    for(var q=0;q<S.holes.length;q++){
+      svg.appendChild(el("path",{d:ringPath(S.holes[q]), fill:"none",
+        stroke:"var(--plum)", "stroke-width":side/260, "stroke-linejoin":"round"}));
+    }
+  } else if(S.outer.length>=2){
+    svg.appendChild(el("path",{d:openPath(S.outer), fill:"none",
+      stroke:"var(--teal)", "stroke-width":side/230, "stroke-linecap":"round",
+      "stroke-linejoin":"round", "stroke-dasharray":(side/90)+" "+(side/110)}));
+  }
+  if(S.hole && S.hole.length>=2){
+    svg.appendChild(el("path",{d:openPath(S.hole), fill:"none",
+      stroke:"var(--plum)", "stroke-width":side/250, "stroke-linecap":"round",
+      "stroke-dasharray":(side/90)+" "+(side/110)}));
+  }
+
+  // 격자점
+  for(var x=0;x<=N;x++){
+    for(var y=0;y<=N;y++){
+      var tag = M ? M.cls[x+","+y] : "out";
+      var fill="var(--line-strong)", rad=r*0.62, op=1;
+      if(tag==="i" && S.showI){ fill="var(--teal)"; rad=r; }
+      else if(tag==="b" && S.showB){ fill="var(--amber)"; rad=r*1.06; }
+      else if(tag==="hole"){ fill="var(--line-strong)"; rad=r*0.5; op=.55; }
+      var c2=toSvgXY(x,y);
+      svg.appendChild(el("circle",{cx:c2[0],cy:c2[1],r:rad,fill:fill,"fill-opacity":op}));
+    }
+  }
+
+  // 꼭짓점
+  drawVerts(S.outer, "var(--teal)", side);
+  for(var v=0;v<S.holes.length;v++) drawVerts(S.holes[v], "var(--plum)", side);
+  if(S.hole) drawVerts(S.hole, "var(--plum)", side);
+
+  // 클릭 판
+  var hit = el("rect",{x:0,y:0,width:side,height:side,fill:"transparent"});
+  hit.style.cursor="crosshair";
+  svg.appendChild(hit);
+
+  paint(M);
+}
+
+function drawVerts(poly,color,side){
+  for(var k=0;k<poly.length;k++){
+    var c=toSvgXY(poly[k][0],poly[k][1]);
+    svg.appendChild(el("circle",{cx:c[0],cy:c[1],r:side/95,fill:"var(--board)",
+      stroke:color,"stroke-width":side/330}));
+  }
+}
+function ringPath(p){
+  var d="M "+toSvgXY(p[0][0],p[0][1]).join(" ");
+  for(var k=1;k<p.length;k++) d+=" L "+toSvgXY(p[k][0],p[k][1]).join(" ");
+  return d+" Z";
+}
+function openPath(p){
+  var d="M "+toSvgXY(p[0][0],p[0][1]).join(" ");
+  for(var k=1;k<p.length;k++) d+=" L "+toSvgXY(p[k][0],p[k][1]).join(" ");
+  return d;
+}
+
+/* ───────── 패널 ───────── */
+function paint(M){
+  var $=function(id){return document.getElementById(id)};
+  var areaBox=$("areaBox"), outS=$("outS");
+
+  $("outI").textContent = M ? (S.showI ? M.i : "가림") : "–";
+  $("outB").textContent = M ? (S.showB ? M.b : "가림") : "–";
+  $("outH").textContent = M ? M.h : S.holes.length;
+  $("outI").className = "val i" + (M && !S.showI ? " masked":"");
+  $("outB").className = "val b" + (M && !S.showB ? " masked":"");
+
+  if(M && S.revealed){
+    areaBox.classList.add("open");
+    outS.textContent = fmt(M.area);
+  }else{
+    areaBox.classList.remove("open");
+    outS.textContent = M ? "?" : "–";
+  }
+
+  var cb=$("checkBody");
+  if(M){
+    var pick = M.i + M.b/2 - 1 + M.h;
+    cb.innerHTML = "i + b/2 − 1 + h<br>= "+M.i+" + "+M.b+"/2 − 1 + "+M.h+
+      " = <b>"+fmt(pick)+"</b><br>실제 넓이 = <b>"+fmt(M.area)+"</b>";
+  }else{
+    cb.textContent = "도형을 완성하면 표시됩니다.";
+  }
+
+  $("btnRecord").disabled = !M;
+  $("btnHole").disabled = !S.closed || !!S.hole;
+  $("btnUndo").disabled = !(S.outer.length || S.holes.length || (S.hole&&S.hole.length) || S.closed);
+
+  checkGoal(M);
+}
+
+function checkGoal(M){
+  var gi=document.getElementById("goalI").value.trim();
+  var gs=document.getElementById("goalS").value.trim();
+  var badge=document.getElementById("goalBadge");
+  if(gi==="" && gs===""){
+    badge.className="badge off"; badge.textContent="목표를 입력하세요"; return;
+  }
+  if(!M){ badge.className="badge off"; badge.textContent="도형을 만들어 보세요"; return; }
+  var okI = gi==="" || Number(gi)===M.i;
+  var okS = gs==="" || Math.abs(Number(gs)-M.area)<1e-9;
+  if(okI&&okS){ badge.className="badge on"; badge.textContent="✓ 목표 달성!"; }
+  else{
+    badge.className="badge off";
+    var miss=[];
+    if(!okI) miss.push("i");
+    if(!okS) miss.push("S");
+    badge.textContent = miss.join(", ")+" 가 아직 달라요";
+  }
+}
+
+function say(msg, warn){
+  var s=document.getElementById("status");
+  s.textContent=msg;
+  s.className = "status" + (warn?" warn":"");
+}
+
+function refresh(){ render(); }
+
+/* ───────── 조작 ───────── */
+function nearestPoint(evt){
+  var pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  var ctm = svg.getScreenCTM();
+  if(!ctm) return null;
+  var loc = pt.matrixTransform(ctm.inverse());
+  var gx = Math.round(loc.x - 1);
+  var gy = Math.round((S.N+1) - loc.y);
+  if(gx<0||gx>S.N||gy<0||gy>S.N) return null;
+  var back = toSvgXY(gx,gy);
+  var dist = Math.hypot(back[0]-loc.x, back[1]-loc.y);
+  if(dist > 0.48) return null;
+  return [gx,gy];
+}
+
+svg.addEventListener("pointerdown", function(evt){
+  evt.preventDefault();
+  var p = nearestPoint(evt);
+  if(!p) return;
+
+  if(S.hole){                                   // 구멍 그리는 중
+    if(S.hole.length>=3 && same(p,S.hole[0])){
+      if(selfCrosses(S.hole)){ say("구멍의 변이 서로 교차합니다. 한 점 취소로 고쳐 보세요.", true); return; }
+      if(!holeInside(S.hole)){ say("구멍은 바깥 도형 안쪽에 완전히 들어가야 합니다.", true); return; }
+      S.holes.push(S.hole); S.hole=null;
+      say("구멍을 만들었습니다. 구멍의 둘레에 있는 점도 b에 들어갑니다.");
+    } else if(!S.hole.some(function(q){return same(q,p)})){
+      S.hole.push(p);
+      say("구멍 작도 중 — 처음 점을 다시 누르면 닫힙니다.");
+    }
+    refresh(); return;
+  }
+
+  if(S.closed){ say("이미 닫힌 도형입니다. ‘구멍 추가’를 누르거나 ‘전체 지우기’로 다시 시작하세요."); return; }
+
+  if(S.outer.length>=3 && same(p,S.outer[0])){
+    if(selfCrosses(S.outer)){ say("변이 서로 교차하는 도형에는 픽의 정리를 쓸 수 없습니다. 한 점 취소로 고쳐 보세요.", true); return; }
+    S.closed=true; S.revealed=false;
+    document.getElementById("guess").value="";
+    document.getElementById("verdict").textContent="";
+    say("도형이 닫혔습니다. 넓이를 예상해 적고 ‘확인’을 눌러 보세요.");
+    refresh(); return;
+  }
+  if(S.outer.some(function(q){return same(q,p)})) return;
+  S.outer.push(p);
+  say(S.outer.length<3 ? "격자점을 3개 이상 눌러 주세요."
+                       : "처음 점을 다시 누르면 도형이 닫힙니다.");
+  refresh();
+});
+
+function holeInside(hole){
+  for(var k=0;k<hole.length;k++){
+    if(!inPoly(hole[k], S.outer)) return false;
+  }
+  for(var m=0;m<hole.length;m++){
+    var a=hole[m], b=hole[(m+1)%hole.length];
+    for(var n=0;n<S.outer.length;n++){
+      if(segCross(a,b,S.outer[n],S.outer[(n+1)%S.outer.length])) return false;
+    }
+  }
+  return true;
+}
+
+document.getElementById("btnHole").addEventListener("click", function(){
+  if(!S.closed) return;
+  S.hole=[];
+  say("구멍이 될 다각형을 안쪽에 그려 보세요.");
+  refresh();
+});
+
+document.getElementById("btnUndo").addEventListener("click", function(){
+  if(S.hole && S.hole.length){ S.hole.pop(); if(!S.hole.length) S.hole=null; }
+  else if(S.hole){ S.hole=null; }
+  else if(S.holes.length){ S.holes.pop(); }
+  else if(S.closed){ S.closed=false; S.revealed=false; }
+  else if(S.outer.length){ S.outer.pop(); }
+  say("한 점을 되돌렸습니다.");
+  refresh();
+});
+
+document.getElementById("btnClear").addEventListener("click", function(){
+  S.outer=[]; S.holes=[]; S.hole=null; S.closed=false; S.revealed=false;
+  document.getElementById("guess").value="";
+  document.getElementById("verdict").textContent="";
+  say("격자점을 3개 이상 누른 뒤, 처음 점을 다시 누르면 도형이 닫힙니다.");
+  refresh();
+});
+
+document.getElementById("selSize").addEventListener("change", function(e){
+  S.N = Number(e.target.value);
+  S.outer=[]; S.holes=[]; S.hole=null; S.closed=false; S.revealed=false;
+  document.getElementById("verdict").textContent="";
+  say("격자 크기를 바꿨습니다. 새로 그려 보세요.");
+  refresh();
+});
+
+document.getElementById("togI").addEventListener("change", function(e){ S.showI=e.target.checked; refresh(); });
+document.getElementById("togB").addEventListener("change", function(e){ S.showB=e.target.checked; refresh(); });
+document.getElementById("togCheck").addEventListener("change", function(e){
+  document.getElementById("checkCard").hidden = !e.target.checked;
+});
+
+document.getElementById("btnGuess").addEventListener("click", function(){
+  var M=measure();
+  var v=document.getElementById("guess").value;
+  var out=document.getElementById("verdict");
+  if(!M){ out.className="verdict bad"; out.textContent="먼저 도형을 닫아 주세요."; return; }
+  if(v===""){ S.revealed=true; out.className="verdict"; out.textContent="넓이를 열었습니다."; refresh(); return; }
+  var guess=Number(v);
+  S.revealed=true;
+  if(Math.abs(guess-M.area)<1e-9){
+    out.className="verdict good"; out.textContent="맞았습니다. 어떻게 구했는지 모둠에서 이야기해 보세요.";
+  }else{
+    out.className="verdict bad";
+    out.textContent="내가 쓴 값 "+fmt(guess)+" — 실제 넓이는 "+fmt(M.area)+"입니다.";
+  }
+  refresh();
+});
+document.getElementById("guess").addEventListener("keydown", function(e){
+  if(e.key==="Enter") document.getElementById("btnGuess").click();
+});
+
+document.getElementById("goalI").addEventListener("input", function(){ checkGoal(measure()); });
+document.getElementById("goalS").addEventListener("input", function(){ checkGoal(measure()); });
+
+/* ───────── 기록 ───────── */
+document.getElementById("btnRecord").addEventListener("click", function(){
+  var M=measure(); if(!M) return;
+  S.seq++;
+  S.records.push({ n:S.seq, S:M.area, i:M.i, b:M.b, h:M.h });
+  drawTable();
+  say("기록했습니다. 도형을 바꿔 가며 표를 채워 보세요.");
+});
+document.getElementById("btnWipe").addEventListener("click", function(){
+  S.records=[]; S.seq=0; drawTable();
+});
+document.getElementById("btnCopy").addEventListener("click", function(){
+  if(!S.records.length) return;
+  var lines=["번호\t넓이 S\t내부 i\t둘레 b\t구멍 h\ti+b/2-1+h"];
+  S.records.forEach(function(r){
+    lines.push(r.n+"\t"+fmt(r.S)+"\t"+r.i+"\t"+r.b+"\t"+r.h+"\t"+fmt(r.i+r.b/2-1+r.h));
+  });
+  var txt=lines.join("\n");
+  var done=function(){ say("표를 복사했습니다. 한글이나 엑셀에 붙여 넣으세요."); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, fallback);
+  } else fallback();
+  function fallback(){
+    var ta=document.createElement("textarea");
+    ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(); }
+    catch(err){ say("복사에 실패했습니다. 표를 직접 선택해 복사해 주세요.", true); }
+    document.body.removeChild(ta);
+  }
+});
+
+function drawTable(){
+  var tb=document.getElementById("tbody");
+  tb.innerHTML="";
+  if(!S.records.length){
+    var tr=document.createElement("tr");
+    tr.innerHTML='<td colspan="7" class="empty">아직 기록이 없습니다. 도형을 만들고 ‘이 도형 기록하기’를 눌러 보세요.</td>';
+    tb.appendChild(tr); return;
+  }
+  S.records.forEach(function(r,idx){
+    var tr=document.createElement("tr");
+    tr.innerHTML =
+      "<td>"+r.n+"</td>"+
+      "<td>"+fmt(r.S)+"</td>"+
+      '<td class="i">'+r.i+"</td>"+
+      '<td class="b">'+r.b+"</td>"+
+      '<td class="h">'+r.h+"</td>"+
+      "<td>"+fmt(r.i + r.b/2 - 1 + r.h)+"</td>"+
+      '<td><button class="del" aria-label="기록 삭제">×</button></td>';
+    tr.querySelector(".del").addEventListener("click", function(){
+      S.records.splice(idx,1); drawTable();
+    });
+    tb.appendChild(tr);
+  });
+}
+
+/* ───────── 시작 예시 ───────── */
+S.outer = [[3,4],[0,1],[5,0]];
+S.closed = true;
+drawTable();
+render();
+say("예시 도형입니다. 넓이를 예상해 적고 ‘확인’을 눌러 보세요.");
+
+})();
+</script>
+
+</body>
+</html>
